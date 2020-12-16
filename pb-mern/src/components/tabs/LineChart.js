@@ -52,7 +52,7 @@ function LineChart({
 
     return (
         <div className="container">
-            <h3>Budget by Area</h3>
+            <h3>Expense by Area</h3>
             <Line
                 className="line"
                 data={dataSource}

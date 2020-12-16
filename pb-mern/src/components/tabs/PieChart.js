@@ -51,7 +51,7 @@ function PieChart({
 
     return (
         <div className="container">
-            <h3>Your Budget in a Pie</h3>
+            <h3>Your Expense in a Pie</h3>
             <Pie
                 className="pie"
                 data={dataSource}

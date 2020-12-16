@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import M from 'materialize-css';
 import jwt from 'jwt-decode';
+import generateColor from '../../generateColor';
 import TabNav from '../TabNav';
 import Tab from '../Tab';
 import PieChart from '../tabs/PieChart';
@@ -14,7 +16,12 @@ function Dashboard({
     backgroundColorData,
     monthData,
     getData,
+    getAuth,
+    isAuth,
 }) {
+    M.AutoInit();
+    const toastHTML =
+        '<span>You are about to be logged out</span><button id="toast-button" class="btn-flat toast-action">Refresh</button>';
     const [dashDetails, setDashDetails] = useState({
         selected: 'PieChart',
         configureData: 'category',
@@ -26,11 +33,34 @@ function Dashboard({
 
     const setSelected = (tab) => {
         setDashDetails({
+            ...dashDetails,
             selected: tab,
         });
     };
 
     const { title, month, budget, configureData, submitListener } = dashDetails;
+
+    // eslint-disable-next-line no-unused-vars
+
+    const getRefresh = async () => {
+        await axios
+            .get('http://localhost:3000/refresh', {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true,
+            })
+            .then((response) => {
+                if (response) {
+                    getAuth();
+                }
+            });
+    };
+
+    const handleRefresh = () => {
+        M.Toast.dismissAll();
+        getRefresh();
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -38,18 +68,14 @@ function Dashboard({
         const titleError = document.querySelector('.helper-text.title');
         const budgetError = document.querySelector('.helper-text.budget');
         const monthError = document.querySelector('.helper-text.month');
+
+        const titleDoc = document.querySelector('#title');
+        const budgetDoc = document.querySelector('#budget');
+        const monthDoc = document.querySelector('#month');
+
         titleError.textContent = '';
         budgetError.textContent = '';
         monthError.textContent = '';
-
-        const generateColor = () => {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i += 1) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        };
 
         const { userId } = jwt(token);
         const backgroundColor = generateColor();
@@ -61,6 +87,17 @@ function Dashboard({
             userId,
             backgroundColor,
         };
+
+        setDashDetails({
+            ...dashDetails,
+            titleData: '',
+            budgetData: '',
+            monthData: '',
+        });
+
+        titleDoc.value = '';
+        budgetDoc.value = '';
+        monthDoc.value = '';
 
         axios
             .post('http://localhost:3000/budget', JSON.stringify(body), {
@@ -84,17 +121,80 @@ function Dashboard({
             });
     };
 
+    const handleDelete = () => {
+        axios
+            .delete('http://localhost:3000/budget1', {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true,
+            })
+            .then((res) => {
+                console.log(res);
+                setDashDetails({
+                    ...dashDetails,
+                    submitListener: !submitListener,
+                });
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
+    const handleDeleteAll = () => {
+        axios
+            .delete('http://localhost:3000/budget', {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true,
+            })
+            .then((res) => {
+                console.log(res);
+                setDashDetails({
+                    ...dashDetails,
+                    submitListener: !submitListener,
+                });
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
+
     const handleChange = (e) => {
         setDashDetails({ ...dashDetails, [e.target.id]: e.target.value });
     };
 
     const handleClick = (e) => {
-        console.log(e.target.name);
         setDashDetails({ ...dashDetails, configureData: e.target.name });
-        console.log(configureData);
     };
 
     const { selected } = dashDetails;
+
+    function launchToast() {
+        setTimeout(() => {
+            M.toast({ html: toastHTML });
+            const tb = document.querySelector('#toast-button');
+            tb.onclick = handleRefresh;
+        }, 40000);
+    }
+
+    function authTime() {
+        setTimeout(() => {
+            getAuth();
+        }, 60010);
+    }
+
+    useEffect(() => {
+        if (isAuth) {
+            launchToast();
+            authTime();
+        }
+
+        return () => {
+            clearTimeout(launchToast);
+            clearTimeout(authTime);
+        };
+    }, [isAuth]);
 
     return (
         <main className="body center">
@@ -191,7 +291,7 @@ function Dashboard({
                             type="text"
                             name="budget"
                             id="budget"
-                            placeholder="Budget"
+                            placeholder="Expense"
                             className="col s6"
                             onChange={handleChange}
                             required
@@ -224,10 +324,36 @@ function Dashboard({
                         id="submit-type-button"
                         type="submit"
                     >
-                        Add a Budget
+                        Add an Expense
                     </button>
                 </form>
             </div>
+            {budgetData.length > 0 ? (
+                <div>
+                    <div>
+                        <button
+                            className="waves-effect waves-light indigo lighten-1 btn"
+                            id="delete-button"
+                            type="button"
+                            onClick={handleDelete}
+                        >
+                            Delete Last Expense
+                        </button>
+                    </div>
+                    <div>
+                        <button
+                            className="waves-effect waves-light indigo lighten-1 btn"
+                            id="delete-all-button"
+                            type="button"
+                            onClick={handleDeleteAll}
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div />
+            )}
         </main>
     );
 }

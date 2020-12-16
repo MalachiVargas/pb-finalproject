@@ -52,7 +52,7 @@ function BarChart({
 
     return (
         <div className="container">
-            <h3>Budget by Bars</h3>
+            <h3>Expense by the Bar</h3>
             <Bar
                 className="bar"
                 data={dataSource}

@@ -51,22 +51,21 @@ function App() {
             });
     };
 
-    const getAuth = async () => {
-        await axios
+    const getAuth = () => {
+        axios
             .get('http://localhost:3000/isUserAuth', {
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 withCredentials: true,
             })
-            .then((response) => {
-                if (response) {
-                    setAuthData({
-                        ...authData,
-                        isAuth: response.data.isAuth,
-                        token: response.data.token,
-                    });
-                }
+            .then(async (response) => {
+                await setAuthData({
+                    isAuth: response.data.isAuth,
+                    token: response.data.token,
+                });
+                console.log(authData);
+                console.log(response.data);
             });
     };
 
@@ -80,15 +79,20 @@ function App() {
     const { isAuth, token } = authData;
 
     useEffect(() => {
-        getAuth();
-    }, []);
+        // nothing
+    }, [isAuth]);
 
     const { title, budget, month, backgroundColor } = chartData;
 
     return (
         <BrowserRouter>
             <div className="App">
-                <NavBar isAuth={isAuth} token={token} getAuth={getAuth} />
+                <NavBar
+                    isAuth={isAuth}
+                    token={token}
+                    getAuth={getAuth}
+                    setAuth={setAuth}
+                />
                 <Switch>
                     <Route exact path="/" component={Homepage} />
                     <Route
@@ -126,6 +130,7 @@ function App() {
                                     monthData={month}
                                     backgroundColorData={backgroundColor}
                                     getData={getData}
+                                    getAuth={getAuth}
                                 />
                             )}
                         />
